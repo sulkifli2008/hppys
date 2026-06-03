@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HPPYS — HPP System Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ===================== TITLE BAR ===================== -->
+<div class="title-bar">
+  <div class="tb-logo">
+    <div class="tb-logo-icon">◆</div>
+    <span>HPPYS</span>
+    <span class="tb-badge">ADMIN</span>
+  </div>
+  <div class="tb-controls">
+    <button class="tb-btn" onclick="window.api.minimizeWindow()">─</button>
+    <button class="tb-btn" onclick="window.api.maximizeWindow()">□</button>
+    <button class="tb-btn close" onclick="window.api.closeWindow()">✕</button>
+  </div>
+</div>
+
+<!-- ===================== MAIN LAYOUT ===================== -->
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-subtitle">HPP System</div>
+      <div class="sidebar-title">Admin Panel</div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard', this)">
+        <span class="nav-icon">📊</span><span>Dashboard</span>
+      </div>
+
+      <div class="nav-section-label">Tarif Fee</div>
+      <div class="nav-item" data-page="rate-shopee" onclick="showPage('rate-shopee', this)">
+        <span class="nav-icon">🟠</span><span>Rate Shopee</span>
+      </div>
+
+      <div class="nav-section-label">Manajemen</div>
+      <div class="nav-item" data-page="tenants" onclick="showPage('tenants', this)">
+        <span class="nav-icon">👥</span><span>Tenant Manager</span>
+      </div>
+      <div class="nav-item" data-page="licenses" onclick="showPage('licenses', this)">
+        <span class="nav-icon">🔑</span><span>License Manager</span>
+      </div>
+      <div class="nav-item" data-page="history" onclick="showPage('history', this)">
+        <span class="nav-icon">📋</span><span>Riwayat Tarif</span>
+      </div>
+
+      <div class="nav-section-label">Sistem</div>
+      <div class="nav-item" data-page="settings" onclick="showPage('settings', this)">
+        <span class="nav-icon">⚙️</span><span>Settings</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      HPPYS v1.0.0 &nbsp;•&nbsp; Admin Panel
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ========== DASHBOARD ========== -->
+    <div id="dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <h1>📊 Dashboard</h1>
+          <p class="page-subtitle" id="dashDate"></p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline" onclick="showPage('rate-shopee', document.querySelector('[data-page=rate-shopee]'))">
+            🟠 Rate Shopee
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-grid cols-4">
+        <div class="stat-card">
+          <div class="stat-card-header"><span class="stat-icon">👥</span><span class="stat-label">Total Tenant</span></div>
+          <p class="stat-value" id="statTotalTenant">–</p>
+          <span class="stat-badge" id="statTenantActive">0 aktif</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header"><span class="stat-icon">🔑</span><span class="stat-label">Lisensi Aktif</span></div>
+          <p class="stat-value" id="statLicenseActive">–</p>
+          <span class="stat-badge" id="statLicenseExpireSoon">–</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header"><span class="stat-icon">🟠</span><span class="stat-label">Kategori Shopee</span></div>
+          <p class="stat-value" id="statShopeeCategories">–</p>
+          <span class="stat-badge">Tarif Fee</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header"><span class="stat-icon">📋</span><span class="stat-label">Log Perubahan</span></div>
+          <p class="stat-value" id="statHistoryCount">–</p>
+          <span class="stat-badge">Audit Trail</span>
+        </div>
+      </div>
+
+      <!-- Recent Tenants -->
+      <div class="card">
+        <div class="card-header">
+          <h3>👥 Tenant Terbaru</h3>
+          <button class="btn btn-sm btn-outline" onclick="showPage('tenants', document.querySelector('[data-page=tenants]'))">Lihat Semua</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Nama Toko</th><th>Status</th><th>Mulai Sewa</th><th>Expired</th><th>License Key</th>
+            </tr></thead>
+            <tbody id="dashTenantBody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Memuat...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quick Rate Info -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 Perubahan Tarif Terakhir</h3>
+          <button class="btn btn-sm btn-outline" onclick="showPage('history', document.querySelector('[data-page=history]'))">Lihat Semua</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Tanggal</th><th>Platform</th><th>Kategori</th><th>Tarif Lama</th><th>Tarif Baru</th><th>Note</th>
+            </tr></thead>
+            <tbody id="dashHistoryBody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Memuat...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== RATE SHOPEE ========== -->
+    <div id="rate-shopee" class="page">
+      <div class="page-header">
+        <div>
+          <h1>🟠 Rate Manager — Shopee</h1>
+          <p class="page-subtitle">Edit tarif biaya admin per kategori & Gratis Ongkir Xtra. Perubahan tercatat otomatis.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline" onclick="importShopeeXlsx()">📥 Import XLSX</button>
+          <button class="btn btn-outline" onclick="exportShopeeJson()">📤 Export JSON</button>
+          <button class="btn btn-primary" onclick="exportShopeeJson()">📦 Buat Paket Tarif</button>
+        </div>
+      </div>
+
+      <!-- Pill Tabs -->
+      <div class="pill-tabs">
+        <button class="pill-tab active" id="tabFeeBtn" onclick="switchRateTab('fee')">Biaya Admin Kategori</button>
+        <button class="pill-tab" id="tabOngkirBtn" onclick="switchRateTab('ongkir')">Gratis Ongkir Xtra</button>
+      </div>
+
+      <!-- Alert info -->
+      <div class="alert alert-info" style="margin-bottom:16px;">
+        💡 Klik langsung pada nilai tarif untuk mengedit. Tekan Enter atau klik di luar untuk menyimpan.
+        <span style="margin-left:auto;">
+          <button class="btn btn-sm btn-outline" onclick="window.api.openExternalUrl('https://seller.shopee.co.id/edu/article/24877')" style="font-size:11px;">🔗 Halaman Resmi Shopee</button>
+        </span>
+      </div>
+
+      <!-- Panel Biaya Admin -->
+      <div id="ratePanelFee" class="card">
+        <div class="card-header">
+          <h3>Biaya Admin per Kategori</h3>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="searchCategory" placeholder="Cari kategori..." style="background:var(--bg-base);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text-primary);font-size:12px;width:180px;" oninput="filterRateTable()">
+            <button class="btn btn-sm btn-danger" onclick="confirmResetRates()">🔄 Reset Default</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Parent Kategori</th><th>Kategori</th>
+              <th>Rate (%)</th><th>Rate (Desimal)</th><th>Terakhir Diubah</th>
+            </tr></thead>
+            <tbody id="feeRateTableBody">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel Ongkir Xtra -->
+      <div id="ratePanelOngkir" class="card" style="display:none;">
+        <div class="card-header">
+          <h3>Tier Gratis Ongkir Xtra</h3>
+          <button class="btn btn-sm btn-outline" onclick="window.api.openExternalUrl('https://seller.shopee.co.id/edu/article/26487')" style="font-size:12px;">🔗 Cek Halaman Resmi</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Tier Key</th><th>Label</th><th>Grup</th>
+              <th>Rate (%)</th><th>Rate (Desimal)</th><th>Cap (Rp)</th><th>Terakhir Diubah</th>
+            </tr></thead>
+            <tbody id="ongkirTableBody">
+              <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:32px;">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TENANT MANAGER ========== -->
+    <div id="tenants" class="page">
+      <div class="page-header">
+        <div>
+          <h1>👥 Tenant Manager</h1>
+          <p class="page-subtitle">Daftar penyewa aplikasi hpp-app. Kelola status, lisensi, dan data tenant.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary" onclick="openTenantModal()">+ Tambah Tenant</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="searchTenant" placeholder="Cari nama toko / email..." oninput="filterTenants()">
+        <select id="filterStatus" onchange="filterTenants()">
+          <option value="">Semua Status</option>
+          <option value="active">Aktif</option>
+          <option value="expired">Expired</option>
+          <option value="revoked">Dicabut</option>
+        </select>
+      </div>
+
+      <div id="tenantList">
+        <div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada tenant</p></div>
+      </div>
+    </div>
+
+    <!-- ========== LICENSE MANAGER ========== -->
+    <div id="licenses" class="page">
+      <div class="page-header">
+        <div>
+          <h1>🔑 License Manager</h1>
+          <p class="page-subtitle">Kelola license key untuk setiap tenant. Generate, revoke, atau export file lisensi.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-warning">
+        ⚠️ License key bersifat unik per tenant. Jika di-revoke, tenant tidak bisa lagi menggunakan fitur premium hpp-app.
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Semua Lisensi</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Nama Toko</th><th>License Key</th><th>Status</th>
+              <th>Expired</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="licenseTableBody">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:32px;">Memuat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== HISTORY / AUDIT LOG ========== -->
+    <div id="history" class="page">
+      <div class="page-header">
+        <div>
+          <h1>📋 Riwayat Perubahan Tarif</h1>
+          <p class="page-subtitle">Audit log semua perubahan tarif fee. Tercatat otomatis setiap kali ada update.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-danger btn-sm" onclick="clearHistory()">🗑️ Hapus Semua Log</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Log Perubahan</h3>
+          <select id="historyPlatform" onchange="loadHistory()" style="background:var(--bg-base);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text-primary);font-size:12px;">
+            <option value="Shopee">Shopee</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Tanggal</th><th>Platform</th><th>Tabel</th>
+              <th>Kategori / Key</th><th>Tarif Lama</th><th>Tarif Baru</th><th>Note</th>
+            </tr></thead>
+            <tbody id="historyTableBody">
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px;">Memuat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SETTINGS ========== -->
+    <div id="settings" class="page">
+      <div class="page-header">
+        <h1>⚙️ Settings</h1>
+      </div>
+
+      <div class="settings-grid">
+        <!-- PIN Admin -->
+        <div class="settings-card">
+          <h3>🔐 PIN Admin</h3>
+          <p class="settings-desc">Ubah PIN untuk akses ke HPPYS Admin Panel</p>
+          <div class="form-group"><label>PIN Lama</label><input type="password" id="pinOld" maxlength="6" placeholder="••••••"></div>
+          <div class="form-group"><label>PIN Baru</label><input type="password" id="pinNew" maxlength="6" placeholder="••••••"></div>
+          <div class="form-group"><label>Konfirmasi PIN Baru</label><input type="password" id="pinConfirm" maxlength="6" placeholder="••••••"></div>
+          <button class="btn btn-primary" onclick="changePin()">💾 Simpan PIN</button>
+          <p id="pinStatus" style="margin-top:8px;font-size:12px;"></p>
+        </div>
+
+        <!-- Database Info -->
+        <div class="settings-card">
+          <h3>🗄️ Database HPPYS</h3>
+          <p class="settings-desc">Informasi dan status database lokal hppys.db</p>
+          <div style="display:grid;gap:8px;margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Tenant</span><strong id="dbTenants">–</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Kategori Fee</span><strong id="dbFeeRates">–</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Log Perubahan</span><strong id="dbHistory">–</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Ukuran File</span><strong id="dbSize">–</strong></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);word-break:break-all;" id="dbPath">–</div>
+        </div>
+
+        <!-- License Prefix -->
+        <div class="settings-card">
+          <h3>🔑 Prefix License Key</h3>
+          <p class="settings-desc">Prefix digunakan saat generate license key. Default: HPPYS</p>
+          <div class="form-group">
+            <label>Prefix</label>
+            <input type="text" id="licensePrefix" placeholder="HPPYS" maxlength="10">
+          </div>
+          <button class="btn btn-primary" onclick="saveLicensePrefix()">💾 Simpan</button>
+        </div>
+
+        <!-- App Info -->
+        <div class="settings-card">
+          <h3>ℹ️ Info Aplikasi</h3>
+          <p class="settings-desc">HPPYS — HPP System Admin Panel</p>
+          <div style="display:grid;gap:8px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Versi</span><strong>1.0.0</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Platform</span><strong>Electron</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Database</span><strong>SQLite (sql.js)</strong></div>
+          </div>
+          <hr class="divider">
+          <p style="font-size:11px;color:var(--text-muted);">Terintegrasi dengan hpp-app via export JSON/license file.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ===================== TOAST ===================== -->
+<div id="toast" class="toast" style="display:none;"></div>
+
+<!-- ===================== MODAL: TENANT ===================== -->
+<div id="tenantModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="tenantModalTitle">Tambah Tenant</h2>
+      <button class="modal-close" onclick="closeTenantModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tenantId">
+      <div class="form-row">
+        <div class="form-group"><label>Nama Toko <span style="color:var(--danger)">*</span></label><input type="text" id="tenantNamaToko" placeholder="Toko Maju Jaya"></div>
+        <div class="form-group"><label>Nama Pemilik</label><input type="text" id="tenantNamaPemilik" placeholder="Budi Santoso"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Email</label><input type="email" id="tenantEmail" placeholder="budi@email.com"></div>
+        <div class="form-group"><label>No. HP / WhatsApp</label><input type="text" id="tenantHp" placeholder="0812xxxxxxxx"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Mulai Sewa</label><input type="date" id="tenantMulai"></div>
+        <div class="form-group"><label>Expired</label><input type="date" id="tenantExpired"></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="tenantStatus">
+          <option value="active">Aktif</option>
+          <option value="expired">Expired</option>
+          <option value="revoked">Dicabut</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Catatan</label><textarea id="tenantCatatan" rows="2" placeholder="Catatan tambahan..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeTenantModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveTenant()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: KONFIRMASI ===================== -->
+<div id="confirmModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="width:400px;">
+    <div class="modal-header"><h2 id="confirmTitle">Konfirmasi</h2><button class="modal-close" onclick="closeConfirm()">✕</button></div>
+    <div class="modal-body"><p id="confirmMessage" style="color:var(--text-secondary);"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeConfirm()">Batal</button>
+      <button class="btn btn-danger" id="confirmOkBtn" onclick="">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
