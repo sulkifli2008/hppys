@@ -266,11 +266,17 @@ ipcMain.handle('tenant:get-all', () => {
 
 ipcMain.handle('tenant:add', (_, data) => {
   try {
-    const { nama_toko, nama_pemilik, email, no_hp, mulai_sewa, expired_sewa, catatan } = data;
+    const { nama_diri, nama_perusahaan, email, notifn1, notifn2,
+            mulai_sewa, expired_sewa, tipe_lisensi, catatan } = data;
     run(
-      `INSERT INTO tenants (nama_toko, nama_pemilik, email, no_hp, mulai_sewa, expired_sewa, catatan)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [nama_toko, nama_pemilik || '', email || '', no_hp || '', mulai_sewa || '', expired_sewa || '', catatan || '']
+      `INSERT INTO tenants
+         (nama_diri, nama_perusahaan, email, notifn1, notifn2,
+          mulai_sewa, expired_sewa, tipe_lisensi, catatan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nama_diri || '', nama_perusahaan || '', email || '',
+       notifn1 || '', notifn2 || '',
+       mulai_sewa || '', expired_sewa || '',
+       tipe_lisensi || 'demo', catatan || '']
     );
     return { success: true };
   } catch (e) { return { success: false, error: e.message }; }
@@ -278,18 +284,47 @@ ipcMain.handle('tenant:add', (_, data) => {
 
 ipcMain.handle('tenant:update', (_, id, data) => {
   try {
-    const { nama_toko, nama_pemilik, email, no_hp, status, mulai_sewa, expired_sewa, catatan } = data;
+    const { nama_diri, nama_perusahaan, email, notifn1, notifn2,
+            status, tipe_lisensi, mulai_sewa, expired_sewa, catatan } = data;
     run(
       `UPDATE tenants SET
-         nama_toko = ?, nama_pemilik = ?, email = ?, no_hp = ?,
-         status = ?, mulai_sewa = ?, expired_sewa = ?, catatan = ?,
+         nama_diri = ?, nama_perusahaan = ?, email = ?,
+         notifn1 = ?, notifn2 = ?,
+         status = ?, tipe_lisensi = ?,
+         mulai_sewa = ?, expired_sewa = ?, catatan = ?,
          updated_at = datetime('now')
        WHERE id = ?`,
-      [nama_toko, nama_pemilik || '', email || '', no_hp || '',
-       status || 'active', mulai_sewa || '', expired_sewa || '', catatan || '', id]
+      [nama_diri || '', nama_perusahaan || '', email || '',
+       notifn1 || '', notifn2 || '',
+       status || 'active', tipe_lisensi || 'demo',
+       mulai_sewa || '', expired_sewa || '', catatan || '', id]
     );
     return { success: true };
   } catch (e) { return { success: false, error: e.message }; }
+});
+
+// Cek status & sisa waktu lisensi per tenant
+ipcMain.handle('license:get-status', (_, tenantId) => {
+  const tenant = query(`SELECT * FROM tenants WHERE id = ?`, [tenantId])[0];
+  if (!tenant) return { success: false, error: 'Tenant tidak ditemukan' };
+  const now = new Date();
+  const expired = tenant.expired_sewa ? new Date(tenant.expired_sewa) : null;
+  const mulai   = tenant.mulai_sewa   ? new Date(tenant.mulai_sewa)   : null;
+  const diffMs  = expired ? expired - now : null;
+  const diffDays = diffMs !== null ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : null;
+  const totalDays = (expired && mulai) ? Math.ceil((expired - mulai) / (1000 * 60 * 60 * 24)) : null;
+  const pctLeft   = (diffDays !== null && totalDays) ? Math.max(0, (diffDays / totalDays) * 100) : null;
+  return {
+    success: true,
+    tenant,
+    expired_date: tenant.expired_sewa,
+    days_left: diffDays,
+    total_days: totalDays,
+    pct_left: pctLeft,
+    is_expired: diffDays !== null ? diffDays <= 0 : false,
+    is_demo: tenant.tipe_lisensi === 'demo',
+    status: tenant.status,
+  };
 });
 
 ipcMain.handle('tenant:delete', (_, id) => {
