@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld('api', {
   revokeLicense:     (tenantId) => ipcRenderer.invoke('license:revoke', tenantId),
   activateLicense:   (tenantId) => ipcRenderer.invoke('license:activate', tenantId),
   exportLicenseFile: (tenantId) => ipcRenderer.invoke('license:export-file', tenantId),
+  getLicenseStatus:  (tenantId) => ipcRenderer.invoke('license:get-status', tenantId),
 
   // Settings
   getSetting:    (key)        => ipcRenderer.invoke('settings:get', key),
