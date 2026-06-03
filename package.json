@@ -1,0 +1,28 @@
+{
+  "name": "hppys",
+  "version": "1.0.0",
+  "description": "HPPYS — HPP System Admin Panel",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": ["hpp", "shopee", "admin", "fee"],
+  "author": "sulkifli2008",
+  "license": "MIT",
+  "dependencies": {
+    "sql.js": "^1.10.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.sulkifli.hppys",
+    "productName": "HPPYS Admin",
+    "directories": { "output": "dist" },
+    "win": { "icon": "build/icon.ico", "target": "nsis" },
+    "linux": { "target": "AppImage" }
+  }
+}
