@@ -364,37 +364,93 @@
 
 <!-- ===================== MODAL: TENANT ===================== -->
 <div id="tenantModal" class="modal-overlay" style="display:none;">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
       <h2 id="tenantModalTitle">Tambah Tenant</h2>
       <button class="modal-close" onclick="closeTenantModal()">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="tenantId">
+
+      <!-- Seksi Data Diri -->
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;">👤 Data Diri</p>
       <div class="form-row">
-        <div class="form-group"><label>Nama Toko <span style="color:var(--danger)">*</span></label><input type="text" id="tenantNamaToko" placeholder="Toko Maju Jaya"></div>
-        <div class="form-group"><label>Nama Pemilik</label><input type="text" id="tenantNamaPemilik" placeholder="Budi Santoso"></div>
+        <div class="form-group">
+          <label>Nama Diri (Penanggung Jawab) <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="tenantNamaDiri" placeholder="Budi Santoso">
+        </div>
+        <div class="form-group">
+          <label>Nama Perusahaan / Toko <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="tenantNamaPerusahaan" placeholder="Toko Maju Jaya">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="tenantEmail" placeholder="budi@email.com">
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Email</label><input type="email" id="tenantEmail" placeholder="budi@email.com"></div>
-        <div class="form-group"><label>No. HP / WhatsApp</label><input type="text" id="tenantHp" placeholder="0812xxxxxxxx"></div>
+        <div class="form-group">
+          <label>No. HP / WA Utama (Notifn 1)</label>
+          <input type="text" id="tenantNotifn1" placeholder="0812xxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>No. HP / WA Cadangan (Notifn 2)</label>
+          <input type="text" id="tenantNotifn2" placeholder="0813xxxxxxxx (opsional)">
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Seksi Lisensi -->
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;">🔑 Lisensi</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipe Lisensi</label>
+          <select id="tenantTipeLisensi">
+            <option value="demo">Demo (Terbatas)</option>
+            <option value="active">Active (Full Access)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status Lisensi</label>
+          <select id="tenantStatus">
+            <option value="active">Aktif</option>
+            <option value="expired">Expired</option>
+            <option value="revoked">Dicabut</option>
+          </select>
+        </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Mulai Sewa</label><input type="date" id="tenantMulai"></div>
-        <div class="form-group"><label>Expired</label><input type="date" id="tenantExpired"></div>
+        <div class="form-group">
+          <label>Mulai Sewa</label>
+          <input type="date" id="tenantMulai">
+        </div>
+        <div class="form-group">
+          <label>Tanggal Mati Lisensi (Expired)</label>
+          <input type="date" id="tenantExpired" oninput="previewLicenseTimer()">
+        </div>
       </div>
-      <div class="form-group"><label>Status</label>
-        <select id="tenantStatus">
-          <option value="active">Aktif</option>
-          <option value="expired">Expired</option>
-          <option value="revoked">Dicabut</option>
-        </select>
+
+      <!-- Preview Timer -->
+      <div id="licenseTimerPreview" style="display:none;margin-bottom:12px;padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg-base);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text-secondary);">⏳ Sisa Waktu Lisensi</span>
+          <strong id="timerPreviewDays" style="font-size:14px;"></strong>
+        </div>
+        <div style="height:6px;background:var(--bg-card-2);border-radius:99px;overflow:hidden;">
+          <div id="timerPreviewBar" style="height:100%;border-radius:99px;transition:width 0.3s;background:var(--success);width:0%"></div>
+        </div>
       </div>
-      <div class="form-group"><label>Catatan</label><textarea id="tenantCatatan" rows="2" placeholder="Catatan tambahan..."></textarea></div>
+
+      <hr class="divider">
+      <div class="form-group">
+        <label>Catatan Tambahan</label>
+        <textarea id="tenantCatatan" rows="2" placeholder="Paket sewa, keterangan khusus, dll..."></textarea>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeTenantModal()">Batal</button>
-      <button class="btn btn-primary" onclick="saveTenant()">💾 Simpan</button>
+      <button class="btn btn-primary" onclick="saveTenant()">💾 Simpan Tenant</button>
     </div>
   </div>
 </div>
