@@ -41,18 +41,30 @@ CREATE TABLE IF NOT EXISTS rate_history (
 
 -- Tenant / penyewa aplikasi
 CREATE TABLE IF NOT EXISTS tenants (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  -- Data Diri
+  nama_diri       TEXT,                          -- nama pemilik / penanggung jawab
+  nama_perusahaan TEXT,                          -- nama perusahaan / toko
+  email           TEXT,
+  notifn1         TEXT,                          -- No HP / WA utama
+  notifn2         TEXT,                          -- No HP / WA cadangan
+  -- Lisensi
+  license_key     TEXT UNIQUE,
+  tipe_lisensi    TEXT DEFAULT 'demo',           -- demo | active
+  status          TEXT DEFAULT 'active',         -- active | expired | revoked
+  mulai_sewa      TEXT,
+  expired_sewa    TEXT,                          -- tanggal mati lisensi (YYYY-MM-DD)
+  -- Keterangan tambahan
+  catatan         TEXT,
+  created_at      TEXT DEFAULT (datetime('now')),
+  updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+-- Migration: jika tabel sudah ada, tambah kolom baru (aman untuk install lama)
+CREATE TABLE IF NOT EXISTS _migration_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  nama_toko TEXT NOT NULL,
-  nama_pemilik TEXT,
-  email TEXT,
-  no_hp TEXT,
-  license_key TEXT UNIQUE,
-  status TEXT DEFAULT 'active',
-  mulai_sewa TEXT,
-  expired_sewa TEXT,
-  catatan TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  migration TEXT UNIQUE,
+  run_at TEXT DEFAULT (datetime('now'))
 );
 
 -- Pengaturan aplikasi
