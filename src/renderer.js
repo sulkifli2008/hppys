@@ -251,13 +251,69 @@ function switchRateTab(tab) {
 
 async function importShopeeXlsx() {
   const res = await window.api.importRateXlsx();
-  if (res.success) {
-    showToast(`✅ Import berhasil: ${res.importedFee} fee + ${res.importedOngkir} ongkir`, 'success');
-    loadRateShopee();
-  } else if (!res.canceled) {
+  if (res.canceled) return;
+  if (!res.success) {
     showToast('❌ Gagal import: ' + res.error, 'error');
+    return;
+  }
+
+  // Jika ada kategori BARU — tampilkan modal konfirmasi merah
+  if (res.newCategories && res.newCategories.length > 0) {
+    showNewCategoryWarning(res.newCategories, res.importedFee, res.importedOngkir);
+  } else {
+    showToast(`✅ Import berhasil: ${res.importedFee} fee + ${res.importedOngkir} ongkir diperbarui`, 'success');
+    loadRateShopee();
   }
 }
+
+// Modal peringatan kategori baru
+function showNewCategoryWarning(newCats, importedFee, importedOngkir) {
+  const existing = document.getElementById('modalNewCategory');
+  if (existing) existing.remove();
+
+  const listHTML = newCats.map(c => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;
+      background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.3);border-radius:8px;margin-bottom:6px;">
+      <div>
+        <span style="font-weight:600;color:#f85149;">🆕 ${c.kategori}</span>
+        ${c.parent ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px;">(${c.parent})</span>` : ''}
+      </div>
+      <span style="font-size:13px;font-weight:700;color:#ee4d2d;">${(c.rate * 100).toFixed(2)}%</span>
+    </div>`).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'modalNewCategory';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+  modal.innerHTML = `
+    <div style="background:var(--bg-card,#1a1a2e);border:1px solid rgba(248,81,73,0.4);border-radius:16px;padding:28px;width:90%;max-width:520px;max-height:80vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:24px;">⚠️</span>
+        <h3 style="margin:0;color:#f85149;">Kategori Baru Terdeteksi!</h3>
+      </div>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">
+        Import XLSX menemukan <strong style="color:#f85149;">${newCats.length} kategori baru</strong> yang belum ada sebelumnya.
+        Kategori ini sudah disimpan ke database. Periksa dan pastikan ini benar.
+      </p>
+      <div style="margin-bottom:20px;max-height:260px;overflow-y:auto;">
+        ${listHTML}
+      </div>
+      <div style="padding:10px 12px;background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:8px;font-size:12px;color:#d29922;margin-bottom:20px;">
+        💡 Jika kategori ini <strong>salah atau tidak perlu</strong>, gunakan tombol "Edit" di tabel tarif untuk menghapusnya.
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('modalNewCategory').remove();loadRateShopee();"
+          style="flex:1;padding:11px;background:linear-gradient(135deg,#f85149,#c0392b);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+          ✅ Mengerti, Lanjutkan
+        </button>
+      </div>
+      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--text-muted);">
+        Total: ${importedFee} kategori fee + ${importedOngkir} ongkir diperbarui
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+
 
 async function exportShopeeJson() {
   const res = await window.api.exportRatesJson('Shopee');
