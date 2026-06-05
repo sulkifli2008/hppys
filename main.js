@@ -143,6 +143,13 @@ ipcMain.handle('rate:import-xlsx', async () => {
     const wb = XLSX.readFile(result.filePaths[0]);
 
     let importedFee = 0, importedOngkir = 0;
+    const newCategories = [];   // kategori BARU yang belum ada di DB
+    const updatedCategories = []; // kategori yang di-update nilainya
+
+    // Ambil semua kategori yang sudah ada di DB
+    const existingKategori = new Set(
+      query(`SELECT kategori FROM fee_rates WHERE platform='Shopee'`).map(r => r.kategori)
+    );
 
     // Parse sheet pertama — cari kolom Kategori & Rate
     const sheetName = wb.SheetNames[0];
@@ -152,17 +159,27 @@ ipcMain.handle('rate:import-xlsx', async () => {
     rows.forEach(row => {
       const keys = Object.keys(row);
       const kategoriKey = keys.find(k => /kategori|category/i.test(k));
-      const rateKey = keys.find(k => /biaya|rate|fee|persen|%/i.test(k));
-      const parentKey = keys.find(k => /grup|group|parent/i.test(k));
+      const rateKey     = keys.find(k => /biaya|rate|fee|persen|%/i.test(k));
+      const parentKey   = keys.find(k => /grup|group|parent/i.test(k));
 
       if (!kategoriKey || !rateKey) return;
       const kategori = String(row[kategoriKey]).trim();
       let rate = String(row[rateKey]).replace('%', '').trim();
       rate = parseFloat(rate);
       if (!kategori || isNaN(rate)) return;
-      // Konversi: jika rate > 1, anggap persen
       if (rate > 1) rate = rate / 100;
       const parent = parentKey ? String(row[parentKey]).trim() : '';
+
+      if (!existingKategori.has(kategori)) {
+        // ⚠️ Kategori BARU — simpan ke DB tapi tandai untuk konfirmasi
+        newCategories.push({ kategori, parent, rate });
+      } else {
+        // Update kategori yang sudah ada
+        const oldRow = query(
+          `SELECT rate FROM fee_rates WHERE platform='Shopee' AND kategori=?`, [kategori]
+        )[0];
+        updatedCategories.push({ kategori, oldRate: oldRow?.rate ?? null, newRate: rate });
+      }
 
       run(
         `INSERT INTO fee_rates (platform, parent_kategori, kategori, rate, updated_at)
@@ -171,7 +188,6 @@ ipcMain.handle('rate:import-xlsx', async () => {
            rate = excluded.rate, parent_kategori = excluded.parent_kategori, updated_at = excluded.updated_at`,
         [parent, kategori, rate]
       );
-
       run(
         `INSERT INTO rate_history (platform, table_name, config_key, new_value, note)
          VALUES ('Shopee', 'fee_rates', ?, ?, 'Import XLSX')`,
@@ -197,13 +213,13 @@ ipcMain.handle('rate:import-xlsx', async () => {
         run(
           `UPDATE ongkir_tiers SET rate = ?, updated_at = datetime('now')
            WHERE platform = 'Shopee' AND tier_key = ?`,
-          [rate, tier]
+           [rate, tier]
         );
         importedOngkir++;
       });
     }
 
-    return { success: true, importedFee, importedOngkir };
+    return { success: true, importedFee, importedOngkir, newCategories, updatedCategories };
   } catch (e) { return { success: false, error: e.message }; }
 });
 
